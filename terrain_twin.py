@@ -71,7 +71,7 @@ def _fetch_tile(z: int, x: int, y: int, timeout: float) -> np.ndarray:
     from PIL import Image  # pillow ships with streamlit
 
     url = ELEVATION_TILES.format(z=z, x=x, y=y)
-    req = urllib.request.Request(url, headers={"User-Agent": "artemis-shield-terrain-twin"})
+    req = urllib.request.Request(url, headers={"User-Agent": "nesy-terrain-twin"})
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         img = Image.open(io.BytesIO(resp.read())).convert("RGB")
     rgb = np.asarray(img, dtype=float)

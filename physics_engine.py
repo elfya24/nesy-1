@@ -1,5 +1,5 @@
 """
-ARTEMIS-SHIELD physics engine (NASA Space Apps 2026)
+Nesy physics engine (NASA Space Apps 2026)
 ====================================================
 
 Ranks terrestrial analog candidates against lunar / Mars target zones and
@@ -585,7 +585,7 @@ def generate_breakdown_matrix(row: pd.Series, target_data: Mapping[str, Any]) ->
 # CLI
 # --------------------------------------------------------------------------- #
 def main() -> None:
-    parser = argparse.ArgumentParser(description="ARTEMIS-SHIELD physics engine")
+    parser = argparse.ArgumentParser(description="Nesy physics engine")
     parser.add_argument("--candidates", default=str(DEFAULT_CANDIDATES_PATH))
     parser.add_argument("--targets", default=str(DEFAULT_TARGETS_PATH))
     parser.add_argument("--target", default="Shackleton Ridge")

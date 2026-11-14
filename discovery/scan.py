@@ -50,7 +50,7 @@ def log(*a):
 def get(url: str, tries: int = 3) -> bytes | None:
     for i in range(tries):
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": "artemis-shield-discovery"})
+            req = urllib.request.Request(url, headers={"User-Agent": "nesy-discovery"})
             with urllib.request.urlopen(req, timeout=30) as r:
                 return r.read()
         except Exception:

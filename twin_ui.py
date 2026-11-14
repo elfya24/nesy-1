@@ -49,8 +49,9 @@ def _tint(shade: np.ndarray, rgb: Tuple[float, float, float]) -> np.ndarray:
 
 
 def render_terrain_twin(row: pd.Series, target_name: str, body: str, key: str = "twin",
-                        rotate_deg: float = 0.0, mirrored: bool = False) -> None:
-    """rotate_deg / mirrored turn the Earth plate the way the shape matcher aligned it (display only)."""
+                        rotate_deg: float = 0.0, mirrored: bool = False, show_synthetic: bool = False) -> None:
+    """rotate_deg / mirrored turn the Earth plate the way the shape matcher aligned it (display only).
+    show_synthetic adds the Synthetic Twin panel below (used on the Discovery page only)."""
     if key == "twin":
         st.subheader("🌙 Terrain Twin: Target vs. Selected Earth Site")
         st.caption(
@@ -164,7 +165,7 @@ def render_terrain_twin(row: pd.Series, target_name: str, body: str, key: str = 
             )
             col.plotly_chart(f3, key=f"{key}_3d_{name}", **_stretch())
 
-    if earth:
+    if earth and show_synthetic:
         render_synthetic_twin(lat, lon, target_name, tdem, earth["z"], body, az, el, key)
 
 
@@ -185,8 +186,17 @@ def render_synthetic_twin(lat: float, lon: float, target_name: str, tdem: Dict[s
                           body: str, az: float, el: float, key: str) -> None:
     """Synthetic twin: the Earth DEM morphed toward the target, with per-stage gap closure (terrain_morph)."""
     st.markdown("#### 🧪 Synthetic Twin: Earth site morphed toward the target")
+    st.markdown(
+        "**What it's for:** no Earth site is an exact copy of the target. This panel reshapes the candidate toward "
+        "the target step by step and shows how much of the difference each step removes. Use it to:\n"
+        "- see *what* separates the candidate from the target (missing craters, too steep, too smooth...);\n"
+        "- judge the candidate: if it gets close while most of it is still the real site, it is a strong analog; "
+        "if it only gets close once it is mostly synthetic, the match is weak;\n"
+        "- plan test terrain: the steps show what would have to be added or flattened on the site to make it "
+        "more target-like for rover or lander tests."
+    )
     st.caption(
-        "Keeps the Earth site's layout, gives each spatial scale the target's amplitude, adds lunar-like craters "
+        "How: keeps the Earth site's layout, gives each spatial scale the target's amplitude, adds lunar-like craters "
         "and caps slopes at the 35° angle of repose. **Earth share** = how much of the final relief is still the "
         "real site; a near-zero value means the twin is mostly synthetic."
     )

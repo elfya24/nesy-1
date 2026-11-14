@@ -20,31 +20,21 @@ DISC = BASE_DIR / "discovery"
 RANKINGS = {
     "3D shape × texture × slope": {
         "file": "shape_texture_candidates.csv", "score": "final_score", "higher_better": True,
-        "about": "final_score = shape × texture × slope, each 0–1 (1 = same as the target). "
-                 "**Shape** (detrended_corr): the target terrain laid over the Earth site, rotated / mirrored to the best fit "
-                 "and with the overall tilt removed: are ridges and hollows in the same places? "
-                 "**Texture** (texture_similarity): crater-like closed pits and no water-carved gullies. "
-                 "**Slope** (slope_similarity): typical slope and steep-part slope within ±3° and total relief within ×1.5 "
-                 "of the target, so a flat plain with one cliff no longer passes as a steep lunar ridge.",
+        "about": "Shape, texture and slope, each scored 0–1 and multiplied (1 = identical to the target). Shape: same ridges and hollows after rotation and tilt removal. Texture: crater-like pits, no water gullies. Slope: similar steepness and relief.",
     },
     "3D shape only": {
         "file": "shape_candidates.csv", "score": "shape_corr", "higher_better": True,
-        "about": "shape_corr: how well the Earth surface matches the target surface at 30 m (rotations and mirror allowed), "
-                 "including the overall tilt. Large-scale form only: ignores texture and does not check that slopes are "
-                 "equally steep. This ranking chose the 150 candidates per target that the other 3D ranking re-scores.",
+        "about": "How closely the Earth surface follows the target surface at 30 m (rotation and mirror allowed). Overall form only: texture and steepness are not checked.",
     },
     "Slope statistics": {
         "file": "discovery_candidates.csv", "score": "match_distance", "higher_better": False,
-        "about": "match_distance (lower = closer): typical slope, steep-part slope and roughness at 30 m vs. the target, "
-                 "fully barren 5 × 5 km boxes only. Says nothing about how the slopes are arranged, so a match here "
-                 "can look very different in 3D.",
+        "about": "Distance between slope and roughness statistics at 30 m (lower = closer). Does not look at how the terrain is laid out, so the 3D shape can differ.",
     },
 }
 
 st.title("🧭 Discovery: Analog Terrain Not Yet Pinned")
 st.caption(
-    "Global scans of open satellite data for Earth terrain that matches each target, with known NASA / ESA / literature "
-    "analog sites removed before scanning."
+    "Earth terrain that matches each target, found by scanning open satellite data. Known analog sites are excluded."
 )
 
 
@@ -137,38 +127,25 @@ render_terrain_twin(
     target, body, key="disc",
     rotate_deg=float(r["rotation_deg"]) if "rotation_deg" in r else 0.0,
     mirrored=bool(r["mirrored"]) if "mirrored" in r else False,
+    show_synthetic=True,
 )
 
 with st.expander("Method, data and limits", expanded=False):
     st.markdown(
-        "**How the 3D candidates were found**\n"
-        "1. *Screen:* every 5 × 5 km box (half-overlapping) between 56°S and 60°N that is at least 60% barren or open "
-        "shrubland (NASA MODIS IGBP 2024), minus known analog sites. About 4.3 million boxes.\n"
-        "2. *Coarse shape:* each box (AWS Terrain Tiles, ~250 m) compared with the target surface under the 8 "
-        "rotations / mirrors of a square.\n"
-        "3. *Fine shape:* the best 150 per target re-measured at 30 m on the same 169 × 169 grid as the target and "
-        "matched over 24 rotation angles × mirror. Result: **3D shape only**.\n"
-        "4. *Re-score:* those 150 re-ranked by shape (tilt removed) × texture × slope. Result: **3D shape × texture × slope**.\n\n"
+        "**How it works**\n"
+        "1. Keep every 5 × 5 km box between 56°S and 60°N that is mostly barren (NASA MODIS land cover), "
+        "minus known analog sites. About 4.3 million boxes.\n"
+        "2. Compare each box with the target shape at ~250 m and keep the best 150 per target.\n"
+        "3. Re-measure those at 30 m with 24 rotations × mirror → **3D shape only**.\n"
+        "4. Re-score by shape × texture × slope → **3D shape × texture × slope**.\n\n"
         "**Reading the scores**\n"
-        "- final_score above ~0.5: shape, texture and slope all close to the target. Around 0.2: at least one of the "
-        "three is clearly off; check `texture_similarity` and `slope_similarity` to see which.\n"
-        "- Shackleton and Malapert currently top out near 0.2: the steep Earth candidates with the right shape are "
-        "carved by water gullies, which lunar slopes do not have. That is a real limit of the analogy, not a bug.\n"
-        "- Jezero matches are weak in shape (detrended_corr below 0.5): the target is a nearly flat crater floor, "
-        "so little shape is left after the tilt is removed.\n\n"
-        "**Data**\n"
-        "- Earth elevation: AWS Terrain Tiles (mostly SRTM 30 m). Above 60°N other, smoother sources are used that "
-        "fake a lunar-like texture, so those latitudes are excluded.\n"
-        "- Targets: NASA PDS LOLA (Shackleton, Malapert), SLDEM2015 (Marius Hills), USGS CTX DTM (Jezero).\n"
-        "- Land cover: NASA MODIS IGBP 2024 via GIBS. The *Slope statistics* scan uses a stricter rule: the whole "
-        "5 × 5 km box barren.\n"
-        "- Excluded: the known analog sites in `discovery/known_analogs.json`, as whole areas (grey on the map).\n\n"
-        "**Limits**\n"
-        "- Terrain only: mineralogy, temperature, ice and radiation are not part of these scans.\n"
-        "- The 3D re-score only sees the 150 candidates chosen by shape; a site that matches all three criteria but "
-        "ranked lower on shape alone is not in the list.\n"
-        "- A candidate is a pre-screen, not a confirmed analog. Check each one on satellite imagery: dunes and SRTM "
-        "noise on flat ground can mimic crater texture.\n\n"
-        "**Re-run:** `python discovery/scan.py` (slope statistics), `python discovery/scan_shape.py` (3D shape), then "
-        "`python discovery/rerank_texture.py` (shape × texture × slope)."
+        "- final_score above ~0.5 is a close match; around 0.2 means one part is off "
+        "(see `texture_similarity` and `slope_similarity`).\n"
+        "- Shackleton and Malapert stay near 0.2: steep Earth slopes have water gullies, lunar ones do not.\n"
+        "- Jezero is a nearly flat crater floor, so shape scores stay low.\n\n"
+        "**Data:** AWS Terrain Tiles (SRTM 30 m) for Earth; NASA PDS LOLA, SLDEM2015 and USGS CTX DTM for the "
+        "targets; NASA MODIS IGBP 2024 for land cover; excluded sites in `discovery/known_analogs.json`.\n\n"
+        "**Limits:** terrain only (no mineralogy, temperature, ice or radiation). A candidate is a pre-screen: "
+        "check it on satellite imagery, since dunes and SRTM noise can mimic craters.\n\n"
+        "**Re-run:** `python discovery/scan.py`, `python discovery/scan_shape.py`, `python discovery/rerank_texture.py`."
     )

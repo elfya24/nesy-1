@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "project": "ARTEMIS-SHIELD (NASA Space Apps 2026)",
+    "project": "Nesy (NASA Space Apps 2026)",
     "version": "1.0",
     "description": "Baseline target-zone parameters (ideal + acceptable range) used to rank terrestrial analog sites.",
     "disclaimer": "Values are literature-informed engineering baselines, rounded and harmonised to the Earth-candidate feature definitions. Re-derive final numbers from the PDS products (LOLA, Diviner, M3, Mini-RF, CRaTER) at your chosen baseline/resolution before publication.",
