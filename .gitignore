@@ -1,0 +1,8 @@
+# Python environment and caches
+.venv/
+__pycache__/
+*.pyc
+
+# Discovery scan: large intermediate output (regenerate with python discovery/scan.py) and run logs
+discovery/barren_cells_coarse.csv
+*.log

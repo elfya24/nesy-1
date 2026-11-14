@@ -36,6 +36,7 @@ from physics_engine import (
     load_candidates,
     load_targets,
 )
+from twin_ui import render_terrain_twin
 
 # --------------------------------------------------------------------------- #
 # Page Config & Custom Aerospace Styling
@@ -644,9 +645,11 @@ def main() -> None:
                 st.session_state["selected_id"] = d.idxmin()
                 st.rerun()
 
+    row = scored.loc[sel_idx]
+    render_terrain_twin(row, target_name, body)
+
     # ---- Candidate Engineering Deep-Dive ---------------------------------- #
     st.subheader("🔬 Site Engineering Inspector & Transfer Scaling")
-    row = scored.loc[sel_idx]
     logistics = compute_field_logistics(row)
 
     sc = st.columns(5)
@@ -841,4 +844,9 @@ def main() -> None:
     )
 
 
-main()
+# Separate pages live in views/; the page menu sits at the top of the sidebar.
+st.navigation([
+    st.Page(main, title="Analog Suite", icon="🛰️", default=True),
+    st.Page(str(BASE_DIR / "views" / "landing_safety.py"), title="Landing Safety", icon="🛬", url_path="landing-safety"),
+    st.Page(str(BASE_DIR / "views" / "discovery.py"), title="Discovery", icon="🧭", url_path="discovery"),
+]).run()
