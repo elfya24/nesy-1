@@ -1,0 +1,9 @@
+streamlit>=1.35
+streamlit-folium>=0.20
+folium>=0.16
+branca>=0.7
+plotly>=5.18
+pandas>=1.5
+numpy>=1.23
+scikit-learn>=1.1
+packaging

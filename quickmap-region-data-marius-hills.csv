@@ -1,0 +1,23 @@
+# center = -56.76,14.09
+# size (m) = 5000,5000
+# pixel scale (m/px) = 19.53125,19.53125
+
+source,sourceId,units,min,max,mean,sdev
+Bolometric Temp. (2023),dlre_tp_tbol_sam,K,98.7185,111.202,100.833,1.90816
+LP Iron Abundance [0.5 deg bin] (FeO wt%),lp_fe,wt%,21.4,21.4,21.4,0
+M3 1um depth,lm3_gp_1umbd_a,unitless,0.0862854,0.103186,0.0935429,0.00489908
+M3 2um center,lm3_gp_2umbc,nm,2116.22,2499.39,2359.92,121.511
+Maximum Global Temperatures,dlre_nntbmax,K,392.048,392.048,392.048,0
+Regolith Temp. (2023),dlre_tp_treg_sam,K,92.126,103.925,98.6637,1.16714
+Diviner Rock Abundance (SAM 2023),dlre_tp_ra,,0.000139316,0.0375837,0.00520928,0.00340141
+Roughness at 100m,ldrm_16,unitless,0.656,1.617,1.05097,0.285148
+TerrainHeight,qts_demstack,m,-1603.48,-1478.43,-1537.36,23.4124
+TerrainPixelScale,qts_demstack_res,mpp,4,4,4,0
+TerrainSlope,qts_demstack_slope,deg,0.00726299,24.0172,2.72136,2.78251
+Temperature Range dT,delta_t_k,K,291.215,291.215,291.215,0.0
+Pit Inner Diameter,pit_inner_diam,m,49,55,52,
+Pit Depth,pit_depth,m,40,40,40,
+Pit Funnel Diameter,pit_funnel_diam,m,79,92,85.5,
+Pit Depth/Diameter Ratio,pit_dd_ratio,unitless,0.73,0.82,0.78,
+Pit Latitude,pit_lat,deg,14.0917,14.0917,14.0917,
+Pit Longitude,pit_lon,degE,303.2299,303.2299,303.2299,
