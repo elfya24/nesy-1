@@ -1,7 +1,7 @@
 
 
 """
-ARTEMIS-SHIELD — Planetary Analog Discovery & Engineering Transfer Suite
+Nesy — Planetary Analog Discovery & Engineering Transfer Suite
 NASA Space Apps Challenge 2026
 =======================================================================
 
@@ -36,12 +36,13 @@ from physics_engine import (
     load_candidates,
     load_targets,
 )
+from twin_ui import render_terrain_twin
 
 # --------------------------------------------------------------------------- #
 # Page Config & Custom Aerospace Styling
 # --------------------------------------------------------------------------- #
 st.set_page_config(
-    page_title="ARTEMIS-SHIELD | Planetary Analog Engineering Suite",
+    page_title="Nesy | Planetary Analog Engineering Suite",
     page_icon="🛰️",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -497,7 +498,7 @@ def build_regional_comparison_chart(scored_valid: pd.DataFrame) -> go.Figure:
 # Main Application
 # --------------------------------------------------------------------------- #
 def main() -> None:
-    st.title("🛰️ ARTEMIS-SHIELD")
+    st.title("🛰️ Nesy")
     st.caption(
         "Multi-Agency Orbital Fusion, Terrestrial Analog Discovery & Engineering Scaling Suite · NASA Space Apps Challenge 2026"
     )
@@ -589,10 +590,7 @@ def main() -> None:
     )
 
     # ---- Top KPI Cards ---------------------------------------------------- #
-    active_regions = int(
-        scored_valid.loc[scored_valid["macro_region"].isin(NAMED_REGIONS), "macro_region"].nunique()
-    )
-    k1, k2, k3, k4 = st.columns(4)
+    k1, k2, k3 = st.columns(3)
     k1.metric("Grid Cells Scanned (5×5 km)", f"{summary['total_input']:,}")
     k2.metric(
         "Valid Barren Analogs",
@@ -601,7 +599,6 @@ def main() -> None:
         delta_color="off",
     )
     k3.metric("Peak Similarity Score", f"{scored_valid['similarity_score'].max():.1f}%")
-    k4.metric("Active Geological Basins", f"{active_regions} / {len(NAMED_REGIONS)}")
 
     if not use_filter:
         st.warning("False-Analog Filter is OFF: scores include unscreened salt flats, dunes, and vegetated cells.")
@@ -644,9 +641,11 @@ def main() -> None:
                 st.session_state["selected_id"] = d.idxmin()
                 st.rerun()
 
+    row = scored.loc[sel_idx]
+    render_terrain_twin(row, target_name, body)
+
     # ---- Candidate Engineering Deep-Dive ---------------------------------- #
     st.subheader("🔬 Site Engineering Inspector & Transfer Scaling")
-    row = scored.loc[sel_idx]
     logistics = compute_field_logistics(row)
 
     sc = st.columns(5)
@@ -810,7 +809,7 @@ def main() -> None:
         st.download_button(
             label="📥 Export Ranked Analog Candidates (CSV)",
             data=csv_bytes,
-            file_name=f"artemis_shield_{target_name.lower().replace(' ', '_')}_analogs.csv",
+            file_name=f"nesy_{target_name.lower().replace(' ', '_')}_analogs.csv",
             mime="text/csv",
         )
 
@@ -841,4 +840,8 @@ def main() -> None:
     )
 
 
-main()
+# Separate pages live in views/; the page menu sits at the top of the sidebar.
+st.navigation([
+    st.Page(main, title="Analog Suite", icon="🛰️", default=True),
+    st.Page(str(BASE_DIR / "views" / "discovery.py"), title="Discovery", icon="🧭", url_path="discovery"),
+]).run()
