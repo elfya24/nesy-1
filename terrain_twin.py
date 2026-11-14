@@ -16,6 +16,7 @@ import base64
 import io
 import json
 import math
+import time
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -72,8 +73,15 @@ def _fetch_tile(z: int, x: int, y: int, timeout: float) -> np.ndarray:
 
     url = ELEVATION_TILES.format(z=z, x=x, y=y)
     req = urllib.request.Request(url, headers={"User-Agent": "nesy-terrain-twin"})
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
-        img = Image.open(io.BytesIO(resp.read())).convert("RGB")
+    for attempt in range(3):          # a single slow / dropped tile used to leave the 3D view empty
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                img = Image.open(io.BytesIO(resp.read())).convert("RGB")
+            break
+        except Exception:
+            if attempt == 2:
+                raise
+            time.sleep(1 + attempt)
     rgb = np.asarray(img, dtype=float)
     return rgb[..., 0] * 256 + rgb[..., 1] + rgb[..., 2] / 256 - 32768
 

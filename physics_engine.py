@@ -129,7 +129,7 @@ def _norm_class(value: Any) -> str:
     s = str(value).strip().lower()
     try:
         return str(int(float(s)))
-    except ValueError:
+    except (ValueError, OverflowError):  # OverflowError: +/-inf (e.g. Earth Engine no-data cells)
         return s
 
 
