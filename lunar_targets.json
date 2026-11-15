@@ -38,22 +38,22 @@
     "Shackleton Ridge": {
       "body": "Moon",
       "region": "Lunar South Pole - Shackleton Rim Ridge",
-      "center_lat": -89.3599,
-      "center_lon": -137.0870,
-      "scientific_context": "Near-permanently illuminated rim ridge adjacent to a permanently shadowed crater; anorthositic highlands (FeO 6.5 wt%) with elevated deconvolved hydrogen (161.4 ug/g) indicating water-ice potential in nearby cold traps.",
+      "center_lat": -89.1701,
+      "center_lon": -137.0404,
+      "scientific_context": "Near-permanently illuminated rim ridge adjacent to a permanently shadowed crater; anorthositic highlands (FeO 6.5 wt%) with elevated deconvolved hydrogen (94.2 ug/g) indicating water-ice potential in nearby cold traps.",
       "quickmap_reference": {
-        "source": "NASA LRO QuickMap (4378x3137m @ -89.36N, -137.09E)",
+        "source": "NASA LRO QuickMap (5000x5000m @ -89.17N, -137.04E)",
         "feo_wt_pct": 6.5,
-        "hydrogen_ug_g": 161.4,
-        "summer_max_temp_k": 240.2,
-        "winter_min_temp_k": 61.5,
-        "mean_slope_deg": 11.34,
-        "roughness_100m": 1.535,
-        "mean_elevation_m": 1647.5
+        "hydrogen_ug_g": 94.2,
+        "summer_max_temp_k": 264.5,
+        "winter_min_temp_k": 64.9,
+        "mean_slope_deg": 15.57,
+        "roughness_100m": 1.019,
+        "mean_elevation_m": 90.0
       },
       "environment": {
         "gravity_m_s2": 1.62,
-        "mean_surface_temp_k": 142.4,
+        "mean_surface_temp_k": 132.5,
         "effective_sky_temp_k": 3,
         "convective_h_w_m2k": 0.0,
         "atmospheric_column_g_cm2": 0.0,
@@ -64,12 +64,12 @@
         "friction_angle_deg": 35
       },
       "parameters": {
-        "slope_deg":               {"ideal": 11.34, "min": 4.0,   "max": 22.0,  "unit": "deg",             "source": "LOLA / DEM (QuickMap TerrainSlope mean)"},
-        "tri_m":                   {"ideal": 20.0,  "min": 8.0,   "max": 35.0,  "unit": "m",               "source": "LOLA / DEM (QuickMap Roughness 1.535)"},
-        "delta_t_k":               {"ideal": 178.7, "min": 80.0,  "max": 210.0, "unit": "K",               "source": "Diviner (Summer max 240.2 K - Winter min 61.5 K)"},
-        "mafic_index":             {"ideal": 1.40,  "min": 1.15,  "max": 1.65,  "unit": "ratio",           "source": "Lunar Prospector FeO 6.5 wt% / M3 1um depth 0.120"},
+        "slope_deg":               {"ideal": 15.57, "min": 4.0,   "max": 22.0,  "unit": "deg",             "source": "LOLA / DEM (QuickMap TerrainSlope mean)"},
+        "tri_m":                   {"ideal": 20.0,  "min": 8.0,   "max": 35.0,  "unit": "m",               "source": "LOLA / DEM (QuickMap Roughness 1.019)"},
+        "delta_t_k":               {"ideal": 199.6, "min": 80.0,  "max": 210.0, "unit": "K",               "source": "Diviner (Summer max 264.5 K - Winter min 64.9 K)"},
+        "mafic_index":             {"ideal": 1.40,  "min": 1.15,  "max": 1.65,  "unit": "ratio",           "source": "Lunar Prospector FeO 6.5 wt% / M3 1um depth 0.107"},
         "clay_hydrated_index":     {"ideal": 1.00,  "min": 0.70,  "max": 1.25,  "unit": "index 0-1",       "source": "M3"},
-        "subsurface_ice_moisture": {"ideal": 0.06,  "min": 0.02,  "max": 0.12,  "unit": "fraction",        "source": "Lunar Prospector H (161.4 ug/g) / Mini-RF"},
+        "subsurface_ice_moisture": {"ideal": 0.06,  "min": 0.02,  "max": 0.12,  "unit": "fraction",        "source": "Lunar Prospector H (94.2 ug/g) / Mini-RF"},
         "albedo":                  {"ideal": 0.22,  "min": 0.15,  "max": 0.32,  "unit": "0-1",             "source": "LOLA 1064 nm"},
         "thermal_inertia_proxy":   {"ideal": 55.0,  "min": 30.0,  "max": 95.0,  "unit": "J m-2 K-1 s-1/2", "source": "Diviner"},
         "radiation_flux_msv_yr":   {"ideal": 310.0, "min": 260.0, "max": 360.0, "unit": "mSv/yr",          "source": "CRaTER"}
