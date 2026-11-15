@@ -187,7 +187,6 @@ render_terrain_twin(
     target, body, key="disc",
     rotate_deg=float(r["rotation_deg"]) if "rotation_deg" in r else 0.0,
     mirrored=bool(r["mirrored"]) if "mirrored" in r else False,
-    show_synthetic=True,
 )
 
 with st.expander("Method, data and limits", expanded=False):
