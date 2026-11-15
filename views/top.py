@@ -89,84 +89,99 @@ def target_table() -> pd.DataFrame:
 
 def site_table(row: pd.Series) -> pd.DataFrame:
     return pd.DataFrame([{"Feature": FEATURE_LABELS[f], "This site": round(float(row[f]), 3),
-                          "In range": "✓" if params[f]["min"] <= row[f] <= params[f]["max"] else "✗"} for f in feats])
+                          "Status": "✅ Valid" if params[f]["min"] <= row[f] <= params[f]["max"] else "❌ Not valid"}
+                         for f in feats])
+
+
+SUN_AZ, SUN_EL, AMBIENT = 135, 45, 0.30     # high sun, no cast shadows, lifted by ambient light: bright plates
+
+
+def plate(z, rgb):
+    """Bright shaded relief: slopes are toned, nothing is blacked out. Same lighting for every plate."""
+    shade = hillshade(z, SUN_AZ, SUN_EL, cast_shadows=False).astype(float)
+    return _tint(255.0 * AMBIENT + (1.0 - AMBIENT) * shade, rgb)
 
 
 tdata = targets[target]
 tdem = cached_target_dem(target)
 polar = abs(float(tdata.get("center_lat", 0))) > 80
-SUN_AZ, SUN_EL = 135, (6 if polar else 25)     # same lighting on all three plates (Terrain Twin defaults)
 
+# Every section below is a collapsible block that starts open.
 best = {}
-moon_col, *site_cols = st.columns(3)
-with moon_col:
-    st.subheader("🌙 Moon")
-    st.caption("The target zone itself, for reference.")
-    if tdem is not None:
-        st.image(_tint(hillshade(tdem["z"], SUN_AZ, SUN_EL), (1.0, 1.0, 1.0)), **_stretch())
-    else:
-        st.info("No terrain model is bundled for this target.")
-    st.markdown(f"**{target}**  \n{tdata.get('region', '')}  \n"
-                f"{tdata.get('center_lat', 0):.3f}°, {tdata.get('center_lon', 0):.3f}°")
-    st.dataframe(target_table(), hide_index=True, **_stretch())
-    st.caption(tdata.get("scientific_context", ""))
+with st.expander("🌙 Moon · 🛰️ Analog Suite · 🧭 Discovery: side by side", expanded=True):
+    moon_col, *site_cols = st.columns(3)
+    with moon_col:
+        st.subheader("🌙 Moon")
+        st.caption("The target zone itself, for reference.")
+        if tdem is not None:
+            st.image(plate(tdem["z"], (1.0, 1.0, 1.0)), **_stretch())
+        else:
+            st.info("No terrain model is bundled for this target.")
+        st.markdown(f"**{target}**  \n{tdata.get('region', '')}  \n"
+                    f"{tdata.get('center_lat', 0):.3f}°, {tdata.get('center_lon', 0):.3f}°")
+        st.dataframe(target_table(), hide_index=True, **_stretch())
+        st.caption(tdata.get("scientific_context", ""))
 
-for col, (source, spec) in zip(site_cols, SOURCES.items()):
-    with col:
-        st.subheader(f"{spec['icon']} {source}")
-        st.caption(spec["about"])
-        s = sel[sel["source"] == source].sort_values("rank")
-        if s.empty:
-            st.info("No site for this target.")
-            continue
-        r = s.iloc[0]
-        best[source] = r
-        try:
-            ez = cached_earth_dem(round(float(r["lat"]), 5), round(float(r["lon"]), 5))["z"]
-            st.image(_tint(hillshade(ez, SUN_AZ, SUN_EL), (1.0, 0.86, 0.66)), **_stretch())
-        except Exception:  # network / tile errors must not break the page
-            st.info("Elevation tiles could not be fetched. Reload the page to retry.")
-        st.markdown(f"**{r['place']}**  \n{r['lat']:.3f}°, {r['lon']:.3f}° · {r['elevation_m']:,.0f} m")
-        st.dataframe(site_table(r), hide_index=True, **_stretch())
-        m1, m2 = st.columns(2)
-        m1.metric("This domain", f"{r['category_score']:.1f}",
-                  help=f"{label} similarity (0–100): the score with only this domain weighted.")
-        m2.metric("All domains", f"{r['overall_score']:.1f}",
-                  help="Score of the same site with the default weights on all four domains.")
-        st.link_button("🗺️ Open in Google Maps (satellite)",
-                       f"https://www.google.com/maps/@{r['lat']},{r['lon']},13z/data=!3m1!1e3", **_stretch())
-st.caption(
-    f"Plates: shaded relief of each 5 × 5 km box on the same 30 m grid, sun at {SUN_EL}° elevation. "
-    + ("Moon plate top = 0° longitude; " if polar else "Moon plate top = north; ") + "Earth plates top = north."
-)
+    for col, (source, spec) in zip(site_cols, SOURCES.items()):
+        with col:
+            st.subheader(f"{spec['icon']} {source}")
+            st.caption(spec["about"])
+            s = sel[sel["source"] == source].sort_values("rank")
+            if s.empty:
+                st.info("No site for this target.")
+                continue
+            r = s.iloc[0]
+            best[source] = r
+            try:
+                ez = cached_earth_dem(round(float(r["lat"]), 5), round(float(r["lon"]), 5))["z"]
+                st.image(plate(ez, (1.0, 0.86, 0.66)), **_stretch())
+            except Exception:  # network / tile errors must not break the page
+                st.info("Elevation tiles could not be fetched. Reload the page to retry.")
+            st.markdown(f"**{r['place']}**  \n{r['lat']:.3f}°, {r['lon']:.3f}° · {r['elevation_m']:,.0f} m")
+            st.dataframe(site_table(r), hide_index=True, **_stretch())
+            m1, m2 = st.columns(2)
+            m1.metric("This domain", f"{r['category_score']:.1f}",
+                      help=f"{label} similarity (0–100): the score with only this domain weighted.")
+            m2.metric("All domains", f"{r['overall_score']:.1f}",
+                      help="Score of the same site with the default weights on all four domains.")
+            st.link_button("🗺️ Open in Google Maps (satellite)",
+                           f"https://www.google.com/maps/@{r['lat']},{r['lon']},13z/data=!3m1!1e3", **_stretch())
+    st.caption(
+        "Plates: shaded relief of each 5 × 5 km box on the same 30 m grid, evenly lit (no cast shadows). "
+        + ("Moon plate top = 0° longitude; " if polar else "Moon plate top = north; ") + "Earth plates top = north. "
+        "Status: Valid when the site's value lies inside the target range."
+    )
 
 if best:
-    m = folium.Map(location=[20, 10], zoom_start=2, tiles=None, control_scale=True)
-    folium.TileLayer(
-        tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-        attr="Esri World Imagery", name="Satellite",
-    ).add_to(m)
-    for source, r in best.items():
-        folium.CircleMarker(
-            [r["lat"], r["lon"]], radius=9, color="#0f172a", weight=1.2, fill=True, fill_opacity=0.95,
-            fill_color=SOURCES[source]["color"],
-            tooltip=f"{source} · {r['place']} · {label} {r['category_score']:.1f}",
+    with st.expander("🗺️ Where the two sites are", expanded=True):
+        m = folium.Map(location=[20, 10], zoom_start=2, tiles=None, control_scale=True)
+        folium.TileLayer(
+            tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+            attr="Esri World Imagery", name="Satellite",
         ).add_to(m)
-    st_folium(m, height=380, use_container_width=True, key=f"top_map_{target}_{group}", returned_objects=[])
-    st.caption("Blue: Analog Suite site. Green: Discovery site.")
+        for source, r in best.items():
+            folium.CircleMarker(
+                [r["lat"], r["lon"]], radius=9, color="#0f172a", weight=1.2, fill=True, fill_opacity=0.95,
+                fill_color=SOURCES[source]["color"],
+                tooltip=f"{source} · {r['place']} · {label} {r['category_score']:.1f}",
+            ).add_to(m)
+        st_folium(m, height=380, use_container_width=True, key=f"top_map_{target}_{group}", returned_objects=[])
+        st.caption("Blue: Analog Suite site. Green: Discovery site.")
 
-st.subheader(f"All four domains · {target}")
-overview = []
-for g in FEATURE_GROUPS:
-    row = {"Domain": GROUP_LABELS[g]}
-    for source in SOURCES:
-        s = top[(top["target"] == target) & (top["category"] == g) & (top["source"] == source) & (top["rank"] == 1)]
-        row[source] = s["place"].iloc[0] if len(s) else "–"
-        row[f"{source} score"] = round(float(s["category_score"].iloc[0]), 1) if len(s) else None
-    overview.append(row)
-st.dataframe(pd.DataFrame(overview), hide_index=True, **_stretch())
+with st.expander("📋 All four domains", expanded=True):
+    st.caption(f"Best site per domain for {target}.")
+    overview = []
+    for g in FEATURE_GROUPS:
+        row = {"Domain": GROUP_LABELS[g]}
+        for source in SOURCES:
+            s = top[(top["target"] == target) & (top["category"] == g) & (top["source"] == source) & (top["rank"] == 1)]
+            row[source] = s["place"].iloc[0] if len(s) else "–"
+            row[f"{source} score"] = round(float(s["category_score"].iloc[0]), 1) if len(s) else None
+        overview.append(row)
+    st.dataframe(pd.DataFrame(overview), hide_index=True, **_stretch())
 
-with st.expander(f"Next best sites · {label}", expanded=False):
+with st.expander("🥈 Next best sites", expanded=True):
+    st.caption(f"{target} · {label}. Sites are at least 50 km apart.")
     for source in SOURCES:
         s = sel[sel["source"] == source].sort_values("rank")
         st.markdown(f"**{source}**")
@@ -176,9 +191,8 @@ with st.expander(f"Next best sites · {label}", expanded=False):
                              **FEATURE_LABELS})
             .round(3),
             hide_index=True, **_stretch())
-    st.caption("Sites are at least 50 km apart.")
 
-with st.expander("Method and limits", expanded=False):
+with st.expander("ℹ️ Method and limits", expanded=True):
     st.markdown(
         "- `discovery/top_by_category.py` runs the Analog Suite similarity engine once per target and domain, with "
         "that domain's weights only and the other three at 0: the same as moving three of the Analog Suite "

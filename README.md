@@ -1,7 +1,7 @@
-# Nesy
+# NESY
 
 Planetary analog discovery and engineering transfer suite (NASA Space Apps Challenge 2026).
-Nesy ranks places on Earth by how closely they resemble three lunar target zones — Shackleton Ridge,
+NESY ranks places on Earth by how closely they resemble three lunar target zones — Shackleton Ridge,
 Malapert Mountain and Marius Hills — and shows where the analogy holds and where it breaks down.
 
 ## Run
