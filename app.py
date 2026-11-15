@@ -844,4 +844,5 @@ def main() -> None:
 st.navigation([
     st.Page(main, title="Analog Suite", icon="🛰️", default=True),
     st.Page(str(BASE_DIR / "views" / "discovery.py"), title="Discovery", icon="🧭", url_path="discovery"),
+    st.Page(str(BASE_DIR / "views" / "top.py"), title="Top", icon="🏆", url_path="top"),
 ]).run()
