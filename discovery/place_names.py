@@ -13,12 +13,14 @@ is used as a fallback.
 
 Usage: python discovery/place_names.py [--project <earth-engine-project>]
        -> adds place / place_km to every candidate CSV in discovery/
+The Earth Engine project can also be set with the EE_PROJECT environment variable.
 """
 
 from __future__ import annotations
 
 import argparse
 import io
+import os
 import re
 import zipfile
 from functools import lru_cache
@@ -33,7 +35,7 @@ GEO = HERE / "geonames"
 ADMIN_CACHE = GEO / "admin_cache.csv"
 CANDIDATE_FILES = ["gee_ranked.csv", "shape_texture_candidates.csv", "shape_candidates.csv", "discovery_candidates.csv"]
 EARTH_R_KM = 6371.0
-DEFAULT_PROJECT = "nesy-123"
+DEFAULT_PROJECT = os.environ.get("EE_PROJECT", "nesy-123")   # set EE_PROJECT to use your own Cloud project
 
 
 @lru_cache(maxsize=1)
@@ -70,6 +72,10 @@ def admin_lookup(points: pd.DataFrame, project: str | None) -> dict:
         try:
             import ee
             ee.Initialize(project=project)
+            # GAUL 2015 is marked deprecated on Earth Engine but still served. Its successor
+            # (FAO/GAUL/2025/level1, fields GAUL1_NAME / GAUL0_NAME) spells regions differently
+            # ("Región De Antofagasta" vs "Antofagasta"); switching means clearing admin_cache.csv
+            # and renaming every candidate, so the labels stay on one edition here.
             gaul = ee.FeatureCollection("FAO/GAUL/2015/level1")
             for i in range(0, len(todo), 500):
                 batch = todo[i:i + 500]
@@ -112,6 +118,8 @@ def add_places(df: pd.DataFrame, project: str | None = DEFAULT_PROJECT) -> pd.Da
         t_region = admin1.get(f"{c['cc']}.{c['admin1']}", "")
         t_country = countries.get(c["cc"], str(c["cc"]))
         g_region, g_country = adm[_key(lat, lon)]
+        if g_region.lower().startswith("administrative unit not available"):   # GAUL label for disputed areas
+            g_region = ""
         same_country = not g_country or _same_country(g_country, t_country)
         region = g_region or t_region
         country = t_country if same_country else _norm_country(g_country)
