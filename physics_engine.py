@@ -1,5 +1,5 @@
 """
-Nesy physics engine (NASA Space Apps 2026)
+NESY physics engine (NASA Space Apps 2026)
 ====================================================
 
 Ranks terrestrial analog candidates against lunar / Mars target zones and
@@ -478,20 +478,11 @@ def calculate_transfer_functions(
 # --------------------------------------------------------------------------- #
 # 4. Breakdown matrix
 # --------------------------------------------------------------------------- #
-def _feature_fidelity(value: float, spec: Mapping[str, float]) -> float:
-    """100 inside [min, max]; decays linearly to 0 at one range-width outside the interval."""
+def _range_verdict(value: float, spec: Mapping[str, float]) -> str:
+    """'Valid' when the value lies inside the target range [min, max], otherwise 'Not valid'."""
     if pd.isna(value):
-        return float("nan")
-    lo, hi = spec["min"], spec["max"]
-    width = max(hi - lo, 1e-9)
-    excess = max(lo - value, value - hi, 0.0)
-    return 100.0 * max(0.0, 1.0 - excess / width)
-
-
-def _verdict(fidelity: float) -> str:
-    if pd.isna(fidelity):
         return "Unknown"
-    return "Valid" if fidelity >= 80 else "Partial" if fidelity >= 50 else "Weak"
+    return "Valid" if spec["min"] <= value <= spec["max"] else "Not valid"
 
 
 def generate_breakdown_matrix(row: pd.Series, target_data: Mapping[str, Any]) -> Dict[str, Any]:
@@ -500,7 +491,7 @@ def generate_breakdown_matrix(row: pd.Series, target_data: Mapping[str, Any]) ->
 
     Returns
     -------
-    dict with ``where_analogy_works`` (per-group fidelity from range checks),
+    dict with ``where_analogy_works`` (per-feature target-range check: Valid / Not valid),
     ``where_analogy_breaks_down`` (limitation + quantified delta + engineering compensation),
     and a ``summary``.
     """
@@ -519,19 +510,18 @@ def generate_breakdown_matrix(row: pd.Series, target_data: Mapping[str, Any]) ->
         detail = {}
         for c in cols:
             val = row.get(c, np.nan)
-            fid = _feature_fidelity(val, params[c])
             detail[c] = {
                 "candidate_value": None if pd.isna(val) else float(val),
                 "target_range": [params[c]["min"], params[c]["max"]],
                 "target_ideal": params[c]["ideal"],
-                "fidelity_pct": None if pd.isna(fid) else round(fid, 1),
-                "verdict": _verdict(fid),
+                "verdict": _range_verdict(val, params[c]),
             }
-        vals = [d["fidelity_pct"] for d in detail.values() if d["fidelity_pct"] is not None]
-        mean_fid = float(np.mean(vals)) if vals else float("nan")
+        known = [d["verdict"] for d in detail.values() if d["verdict"] != "Unknown"]
+        n_ok = sum(v == "Valid" for v in known)
         works[group] = {
-            "group_fidelity_pct": None if math.isnan(mean_fid) else round(mean_fid, 1),
-            "verdict": _verdict(mean_fid),
+            "features_valid": n_ok,
+            "features_total": len(known),
+            "verdict": "Unknown" if not known else ("Valid" if n_ok == len(known) else "Not valid"),
             "rationale": notes[group],
             "features": detail,
         }
@@ -614,7 +604,7 @@ def generate_breakdown_matrix(row: pd.Series, target_data: Mapping[str, Any]) ->
 # CLI
 # --------------------------------------------------------------------------- #
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Nesy physics engine")
+    parser = argparse.ArgumentParser(description="NESY physics engine")
     parser.add_argument("--candidates", default=str(DEFAULT_CANDIDATES_PATH))
     parser.add_argument("--targets", default=str(DEFAULT_TARGETS_PATH))
     parser.add_argument("--target", default="Shackleton Ridge")
