@@ -22,7 +22,7 @@ DISC = BASE_DIR / "discovery"
 RANKINGS = {
     "Analog Suite engine (worldwide)": {
         "file": "gee_ranked.csv", "score": "similarity_score", "higher_better": True,
-        "about": "Worldwide 5 × 5 km cells built on Google Earth Engine with the same sources and formulas as the "
+        "about": "Worldwide ~5 km cells (0.045°) built on Google Earth Engine from the same sources as the "
                  "Analog Suite data, passed through the same false-analog filter (no ocean, forest, cropland, towns, "
                  "salt flats, dunes, vegetated or wet ground) and scored with the same similarity engine (0–100). "
                  "Known lunar analog sites are removed; best cells at least 50 km apart.",
@@ -187,17 +187,19 @@ render_terrain_twin(
     target, body, key="disc",
     rotate_deg=float(r["rotation_deg"]) if "rotation_deg" in r else 0.0,
     mirrored=bool(r["mirrored"]) if "mirrored" in r else False,
-    show_synthetic=True,
 )
 
 with st.expander("Method, data and limits", expanded=False):
     st.markdown(
         "**Analog Suite engine (worldwide)**\n"
         "1. `discovery/gee_scan.py` builds the same 11 features as `earth_candidates.csv` on Google Earth Engine for "
-        "every 5 × 5 km cell in 1° tiles with dry open land (56°S–60°N): NASADEM slope / roughness, Landsat 9 "
+        "every 0.045° cell in 1° tiles with dry open land (56°S–60°N): NASADEM slope / roughness, Landsat 9 "
         "Red/Blue (mafic), SWIR1/SWIR2 (clay), visible albedo and NDVI, MODIS day–night ΔT, SMAP moisture, "
-        "ESA WorldCover land cover. Checked against the existing data on the pilot boxes: the filter gives the same "
-        "verdict on 97.9% of Qaidam cells and 81.9% of Anatolian cells (NDVI sits right at the 0.15 cut there).\n"
+        "ESA WorldCover land cover. Cells are 5 km north–south and 5 km × cos(latitude) east–west "
+        "(4.4 km median), and vegetated pixels are averaged in rather than masked, so values are close to the "
+        "Analog Suite data but not identical. On the 8,302 cells both share: correlation 0.82–1.00 per feature, "
+        "ΔT 9% lower, and the filter gives the same verdict on 95.9% of cells (98% in Qaidam, 82–84% in "
+        "Anatolia and the Altiplano, where NDVI sits right at the 0.15 cut).\n"
         "2. `discovery/gee_rank.py` runs the Analog Suite's `apply_false_analog_filter` and "
         "`compute_similarity_scores` unchanged, after removing known lunar analog sites "
         "(`for: moon / both` in `discovery/known_analogs.json`; Mars-only sites such as Qaidam or Atacama stay "
@@ -215,7 +217,9 @@ with st.expander("Method, data and limits", expanded=False):
         "\n"
         "**Data:** AWS Terrain Tiles (SRTM 30 m) for Earth; NASA PDS LOLA, SLDEM2015 and USGS CTX DTM for the "
         "targets; NASA MODIS IGBP 2024 for land cover; excluded sites in `discovery/known_analogs.json`.\n\n"
-        "**Limits:** terrain only (no mineralogy, temperature, ice or radiation). A candidate is a pre-screen: "
-        "check it on satellite imagery, since dunes and SRTM noise can mimic craters.\n\n"
-        "**Re-run:** `python discovery/scan.py`, `python discovery/scan_shape.py`, `python discovery/rerank_texture.py`."
+        "**Limits:** the 3D shape and slope rankings use terrain only (no mineralogy, temperature, ice or "
+        "radiation); the Analog Suite engine ranking uses all eight features but not the 3D shape. Every candidate "
+        "is a pre-screen: check it on satellite imagery, since dunes and SRTM noise can mimic craters.\n\n"
+        "**Re-run:** `python discovery/gee_scan.py --project <id>` then `python discovery/gee_rank.py`; "
+        "`python discovery/scan.py`, `python discovery/scan_shape.py`, `python discovery/rerank_texture.py`."
     )

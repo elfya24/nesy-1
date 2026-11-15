@@ -1,9 +1,19 @@
 """
-Earth Engine discovery scan: rebuild the earth_candidates.csv features worldwide, with the same
-sources and definitions as the team guide (ARTEMIS-SHIELD Teknik Uygulama ve Veri Rehberi), so the
-Analog Suite's false-analog filter and similarity engine can run on new ground.
+Earth Engine discovery scan: rebuild the earth_candidates.csv features worldwide, from the same
+sources as the team guide (ARTEMIS-SHIELD Teknik Uygulama ve Veri Rehberi), so the Analog Suite's
+false-analog filter and similarity engine can run on new ground.
 
-Per 5 km cell (0.045 deg grid, EPSG:4326):
+Differences from the team's earth_candidates.js export (kept so a worldwide scan stays affordable):
+  * cells are 0.045 deg squares: 5 km north-south, but 5 km x cos(latitude) east-west (4.4 km median,
+    2.5 km at 60 deg), not equal-area 5 x 5 km UTM cells; each 1 deg tile holds 22 x 22 cells (0.99 deg)
+  * every pixel is averaged; the team script first masks vegetated (NDVI > 0.15), water and urban pixels
+  * one year (2024) instead of 2023-2024; thermal inertia is 274.46 / delta_t_k, not T_night / delta_t_k
+  * no "blue > 0" / "SWIR2 > 0" guard on the band ratios; apply_false_analog_filter rejects the
+    resulting impossible values (invalid_value rule)
+Measured on the 8,302 cells both data sets share: correlation 0.82-1.00 per feature, medians within
+5 % except delta_t_k (-9 %) and thermal_inertia_proxy (+10 %), same filter verdict on 95.9 % of cells.
+
+Per cell (0.045 deg grid, EPSG:4326):
   elevation_m                  NASADEM 30 m, cell mean
   slope_deg                    NASADEM slope at ~55 m, cell mean (calibrated to the existing CSV)
   tri_m                        standard deviation of NASADEM elevation in the cell (calibrated to the existing CSV)
@@ -26,11 +36,8 @@ Output: discovery/gee_cells.csv (appends per tile, resumable)
 from __future__ import annotations
 
 import argparse
-import io
 import math
-import sys
 import time
-import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
