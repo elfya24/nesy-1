@@ -75,6 +75,20 @@ PLAYA_ALBEDO_MIN, PLAYA_SLOPE_MAX, PLAYA_MAFIC_MAX = 0.38, 1.2, 1.05
 DUNE_TRI_MAX, DUNE_MAFIC_MAX = 1.5, 1.0
 NDVI_MAX, MOISTURE_MAX = 0.15, 0.18
 
+# Physically possible value ranges (inclusive). Values outside come from sensor artefacts, e.g. Landsat band
+# ratios with a near-zero or negative denominator (mafic_index -204 / 302, ndvi -2827 in the GEE world scan).
+VALID_RANGES: Dict[str, Tuple[float, float]] = {
+    "ndvi": (-1.0, 1.0),
+    "albedo": (0.0, 1.0),
+    "subsurface_ice_moisture": (0.0, 1.0),
+    "mafic_index": (1e-6, 10.0),
+    "clay_hydrated_index": (1e-6, 10.0),
+}
+
+# Scaling uses these candidate percentiles (plus the target range) so a handful of extreme cells cannot
+# squeeze every other candidate into a tiny part of the [0, 1] scale.
+SCALE_QUANTILES = (0.01, 0.99)
+
 # Macro-region bounding boxes: (name, lat_min, lat_max, lon_min, lon_max). Coarse boxes - refine as needed.
 MACRO_REGIONS: List[Tuple[str, float, float, float, float]] = [
     ("Anatolian Volcanic Belt", 36.5, 41.0, 30.0, 44.5),
@@ -145,6 +159,7 @@ def apply_false_analog_filter(
       * ``mobile_sand_dune``     : tri_m < 1.5 AND mafic_index < 1.0
       * ``vegetated_or_wet``     : ndvi > 0.15 OR subsurface_ice_moisture > 0.18
       * ``non_barren_landcover`` : landcover_class not in the barren set
+      * ``invalid_value``        : a value outside ``VALID_RANGES`` or +/-inf (sensor artefact)
       * ``missing_data``         : NaN in any field needed by the rules
 
     Returns
@@ -161,14 +176,23 @@ def apply_false_analog_filter(
     wet_veg = (df["ndvi"] > NDVI_MAX) | (df["subsurface_ice_moisture"] > MOISTURE_MAX)
     non_barren = ~df["landcover_class"].map(lambda v: (not pd.isna(v)) and _norm_class(v) in barren)
 
+    invalid = pd.Series(False, index=df.index)
+    for col in [c for c in FEATURES if c in df.columns]:
+        invalid |= np.isinf(pd.to_numeric(df[col], errors="coerce"))
+    for col, (vmin, vmax) in VALID_RANGES.items():
+        if col in df.columns:
+            v = pd.to_numeric(df[col], errors="coerce")
+            invalid |= (v < vmin) | (v > vmax)
+
     # Comparisons with NaN evaluate False, so missing rows are handled explicitly above.
-    reject = missing | playa | dune | wet_veg | non_barren
+    reject = missing | playa | dune | wet_veg | non_barren | invalid
     summary = {
         "total_input": int(len(df)),
         "salt_playa_evaporite": int(playa.sum()),
         "mobile_sand_dune": int(dune.sum()),
         "vegetated_or_wet": int(wet_veg.sum()),
         "non_barren_landcover": int((non_barren & ~df["landcover_class"].isna()).sum()),
+        "invalid_value": int(invalid.sum()),
         "missing_data": int(missing.sum()),
         "total_rejected_unique": int(reject.sum()),
         "total_retained": int((~reject).sum()),
@@ -214,7 +238,9 @@ def compute_similarity_scores(
     Method
     ------
     * Features are min-max scaled with a ``MinMaxScaler`` fitted on candidates + target
-      ideal/min/max so the target lies inside [0, 1] and units are comparable.
+      ideal/min/max so the target lies inside [0, 1] and units are comparable. Candidates are clipped to
+      their ``SCALE_QUANTILES`` percentiles for the fit, so rare extreme cells do not compress the scale;
+      values beyond the fitted range are clipped to 0 or 1.
     * Euclidean similarity: ``1 - sqrt(sum_i w_i (x_i - t_i)^2)`` (weights sum to 1 -> distance in [0, 1]).
     * Cosine similarity   : cosine of the sqrt(w)-weighted vectors centred at 0.5 (mid-range), mapped to [0, 1].
       Centering avoids the trivial ~1.0 cosine of all-positive scaled vectors.
@@ -244,7 +270,10 @@ def compute_similarity_scores(
     hi = pd.Series({f: params[f]["max"] for f in FEATURES})
 
     scaler = MinMaxScaler()
-    scaler.fit(pd.concat([X[valid], ideal.to_frame().T, lo.to_frame().T, hi.to_frame().T], ignore_index=True))
+    Xfit = X[valid]
+    if len(Xfit):
+        Xfit = Xfit.clip(Xfit.quantile(SCALE_QUANTILES[0]), Xfit.quantile(SCALE_QUANTILES[1]), axis=1)
+    scaler.fit(pd.concat([Xfit, ideal.to_frame().T, lo.to_frame().T, hi.to_frame().T], ignore_index=True))
     Xs = np.clip(scaler.transform(X[valid]), 0.0, 1.0) if valid.any() else np.empty((0, len(FEATURES)))
     ts = np.clip(scaler.transform(ideal.to_frame().T)[0], 0.0, 1.0)
 
